@@ -1,0 +1,334 @@
+chapter3 : 신경망
+
+3.1 퍼셉트론에서 신경망으로
+
+3.1.1 신경망의 예
+- 입력층 => 은닉층 => 출력층
+
+3.1.2 퍼셉트론 복습
+
+3.1.3 활성화 함수의 등장
+- 입력 신호의 총합을 출력 신호로 변호나하는 함수를 일반적으로 [활성화 함수]라고 합니다.
+- 가중치가 달린 입력 신호와 편향의 총합을 계산하고, 이를 a라 합니다. 그리고 a를 함수 h()에 넣어 y를 출력하는 흐름입니다.
+
+* [단층 퍼셉트론] : 단층 네트워크에서 계단함수를 활성화함수로 사용한 모델
+* [다층 퍼셉트론] : 여러 층으로 구성된 신경망을 바탕으로 활성화함수를 시그모이드 함수와 같은 매끈한 활성화 함수를 사용한 모델
+
+3.2 활성화 함수
+3.2.1 시그모이드 함수
+- 사실 앞 장에서 본 퍼셉트론과 앞으로 볼 신경망의 주도니 차이는 이 활성화 함수뿐입니다.
+
+3.2.2 계단 함수 구현하기
+
+def step_function(x):
+    if x > 0:
+       return 1
+    else:
+       return 0
+       
+- 인수 x는 실수(부동소수점)만 받아들입니다. step_function(3.0)은 되지만 넘파이 배열을 인수로 넣을 수는 없습니다.
+
+
+- 우리는 앞으로를 위해 넘파이 배열도 지원하도록 수정하고 싶습니다.
+def step_function(x):
+    y = x >0
+    return y.astype(np.int)
+
+import numpy as np
+x = np.array([-1.0, 1.0, 2.0])
+
+- 우리가 원하는 계단 함수는 0이나 1의 'int형'을 출력하는 함수죠. 그래서 배열 y의 원소를 bool에서 int형으로 바꿔줍니다.
+y = y.astype(np.int)
+- bool을 int로 변환하면 True는 1로, False는 0으로 변환됩니다.
+
+
+3.2.3 계단 함수의 그래프
+- 이제 앞에서 정의한 계단 함수를 그래프로 그려봅시다.
+import numpy as np
+import matplotlib.pylab as plt
+
+def step_function(x):
+   return np.array(x > 0, dtype=np.int)
+   
+x = np.arange(-5.0, 5.0, 0.1)
+y = step_function(x)
+plt.plot(x, y)
+plt.ylim(-0.1, 1.1)
+plt.show()
+
+
+3.2.4 시그모이드 함수 구현하기
+def sigmoid(x):
+    return 1 / (1 + np.exp(-x))
+    
+x = np.array([-1.0, 1.0, 2.0])
+sigmoid(x)
+
+
+3.2.5 시그모이드 함수와 계단 함수 비교
+- 시그모이드 함수는 연속적인 값을 도출하지만, 계단함수는 0 혹은 1만으로 출력값을 도출한다.
+- 하지만 두 함수의 공통점은 [입력이 중요하면 큰 값을 출력하고, 입력이 중요하지 않으면 작은 값을 출력]한다는데 있다.
+
+
+3.2.6 비선형 함수
+- 계단 함수와 시그모이드 함수의 또다른 공통점은 [둘 모두 비선형 함수]라는 것이다.
+* 신경망에서는 활성화 함수로 비선형 함수를 사용해야 합니다. 달리 말하면, 선형 함수를 사용해서는 안 됩니다. 왜 선형 함수는
+안 되는 걸까요? 그 이유는 바로 선형 함수를 이용하면 신경망의 층을 깊게 하는 의미가 없어지기 때문입니다.
+- 선형 함수를 이용하면 여러 층으로 구성하는 이점을 살릴 수 없습니다.
+- 그래서 층을 쌓는 혜택을 얻고 싶다면 활성화 함수로는 반드시 비선형 함수를 사용해야 합니다.
+
+
+3.2.7 ReLU 함수
+- 시그모이드 함수는 신경망 분야에서 오래전부터 이용해왔으나, 최근에는 ReLU 함수를 주로 이용합니다.
+
+def relu(x):
+    return np.maximum(0, x)
+    
+* 음수 범위에서는 0이 가장 큰 값, 양수 범위에서는 입력되는 값이 가장 큰 값
+
+
+3.3 다차원 배열의 계산
+3.3.1 다차원 배열
+
+import numpy as np
+A = np.array([1, 2, 3, 4])
+print(A)
+np.ndim(A)
+A.shape
+A.shape[0]
+
+
+B = np.array([[1,2], [3,4], [5,6]])
+print(B)
+np.ndim(B)
+[1] 2
+B.shape
+[1] (3, 2)
+
+
+3.3.2 행렬의 내적(행렬 곱)
+
+A = np.array([[1,2], [3,4]])
+A.shape
+B = np.array([[5,6], [7,8]])
+B.shape
+np.dot(A, B) # 실제로 행하는 행렬의 곱을 나타낸 것
+
+* ndim과 shape의 차이점?
+- ndim : 배열의 차수
+- shape : 전체 배열의 모양
+
+
+3.3.3 신경망의 내적
+
+3.4 3층 신경망 구현하기
+: 3층 신경망을 구현하는건, 연산을 3번 수행했다는 것
+
+X = np.array([1.0, 0.5])
+W1 = np.array([[0.1, 0.4, 0.5], [0.2, 0.4, 0.6]])
+B1 = np.array([0.1, 0.2, 0.3])
+
+A1 = np.dot(X, W1) + B1
+
+Z1 = sigmoid(A1)
+
+-
+
+W2 = np.array([0.1, 0.4], [0.2, 0.5], [0.3, 0.6]])
+B2 = np.array([0.1, 0.2])
+
+A2 = np.dot(Z1, W2) + B2
+Z2 = sigmoid(A2)
+
+-
+
+def identity_function(x):
+   return x
+   
+W3 = np.array([0.1, 0.3], [0.2, 0.4]])
+B3 = np.array([0.1, 0.2])
+
+A3 = np.dot(Z2, W3) + B3
+Y = identity_function(A3) # 혹은 Y = A3
+
+* 마지막에 반드시 항등함수를 활성화 함수로 써야하는 것은 아니다.
+* 출력층의 활성화 함수는 풀고자 하는 문제의 성질에 맞게 정합니다. 예를 들어 회귀에는 항등 함수를, 
+2클래스 분류에는 시그모이드 함수를, 다중 클래스 분류에서는 소프트맥스 함수를 사용하는 것이 일반적입니다.
+
+
+3.4.3 구현 정리
+- 신경망 구현의 관례에 따라 가중치만 W1과 같이 대문자로 쓰고, 그 외 편향과 중간 결과 등은 모두 소문자로 썼습니다.
+
+def init_network()):
+    network = {}
+    network['W1'] = np.array([[0.1, 0.3, 0.5], [0.2, 0.4, 0.6]])
+    network['b1'] = np.array([0.1, 0.2, 0.3])
+    network['W2'] = np.array([[0.1, 0.4], [0.2, 0.5], [0.3, 0.6]])
+    network['b2'] = np.array([0.1, 0.2])
+    network['W3'] = np.array([[0.1, 0.3], [0.2, 0.4]])
+    network['b3'] = np.array([0.1, 0.2])
+    
+    return network
+    
+def forward(network, x):
+    W1, W2, W3 = network['W1'], network['W2'], network['W3']
+    b1, b2, b3 = network['b1'], network['b2'], netowrk['b3']
+    
+    a1 = np.dot(x, W1) + b1
+    z1 = sigmoid(a1)
+    a2 = np.dot(z1, W2) + b2
+    z2 = sigmoid(a2)
+    a3 = np.dot(z2, W3) + b3
+    y = identity_function(a3)
+    
+    return y
+    
+ network = init_network()
+ x = np.array([1.0, 0.5])
+ y = forward(network, x)
+ 
+ * 여기에서 init_network() 함수는 가중치와 편향을 초기화하고 이들을 딕셔너리 변수인 network에 저장합니다. 
+ 이 딕셔너리 변수 network에는 각 층에 필요한 매개변수를 저장합니다.
+ 그리고 forward() 함수는 입력 신호를 출력으로 변환하는 처리 과정을 모두 구현하고 있습니다.
+ 
+ -
+ 
+ 3.5 출력층 설계하기
+ * 기계학습 문제는 1) 분류와 2) 회귀로 나뉩니다.
+ 
+ - 
+ 
+ 3.5.1 항등 함수와 소프트맥스 함수 구현하기
+ 
+ def softmax(a):
+     exp_a = np.exp(a)
+     sum_exp_a = np.sum(exp_a)
+     y = exp_a / sum_exp_a
+     
+     return a
+     
+-
+
+3.5.2 소프트맥스 함수 구현 시 주의점
+- 오버플로를 막을 목적으로는 입력 신호 중 최댓값을 이용하는 것이 바람직합니다.
+- 이 예에서 보는 것처럼 아무런 조치 없이 그냥 계산하면 nan이 출력됩니다. 하지만 입력 신호 중 최댓값을 빼주면, 올바르게 계산이 간으합니다.
+
+def softmax(a):
+    c = np.max(a)
+    exp_a = np.exp(a-c)
+    sum_exp_a = np.sum(exp_a)
+    y = exp_a / sum_exp_a
+    
+    return y
+    
+-
+
+3.5.3 소프트맥스 함수의 특징
+- 소프트맥스 함수의 출력은 0에서 1.0 사이의 실수입니다.
+- 출력 총합이 1이 된다는 점은 소프트맥스 함수의 중요한 성질입니다.
+
+-
+
+3.5.4 출력층의 뉴런 수 정하기
+
+-
+
+3.6 손글씨 숫자 인식
+
+import sys, os
+sys.path.append(os.pardir)
+from dataset.mnist import load_mnist
+
+(x_train, t_train), (x_test, t_test) = load_mnist(flatten = True, normalize = True, one_hot_label = False)
+# (훈련 이미지, 훈련 레이블), (시험 이미지, 시험 레이블)
+# 인수로는, normalize, flatten, one_hot_label 세 가지를 설정할 수 있습니다.
+# normalize = 정규화 / flatten = 입력이미지를 1차원 배열로 만드는 것 / one_hot_label = 레이블을 원-핫 인코딩 형태로 저장하는 것
+
+import sys, os
+sys.path.append(os.pardir)
+import numpy as np
+from dataset.mnist import load_mnist
+from PIL import Image
+
+def img_show(img):
+   pil_img = Image.fromarray(np.unit8(img))
+   pil_img.show()
+   
+(x_train, t_train), (x_test, t_test) = load_mnist(flatten = True, normalize = False)
+
+img = x_train[0]
+label = t_train[0]
+print(label)
+
+print(img.shape)
+img = img.reshape(28, 28)
+print(img.shape)
+
+img_show(img)
+
+# 넘파이로 저장된 이미지 데이터를 PIL용 데이터 객체로 변환해야 하며, 이 변환은 Image.fromarray()가 수행합니다.
+
+-
+
+3.6.2 신경망의 추론 처리
+
+def get_data():
+   (x_train, t_train), (x_test, t_test) = \
+         load_mnist(normalize = True, flatten = True, one_hot_label = False)
+   return x_test, t_Test
+   
+def init_network():
+    with open('sample_weight.pk', 'rb') as f:
+         network = pickle.load(f)
+         
+    return network
+    
+def predict(network, x):
+   W1, W2, W3 = network['W1'], network['W2'], network['W3']
+   b1, b2, b3 = network['b1'], network['b2'], network['b3']
+   
+   a1 = np.dot(x, W1) + b1
+   z1 = sigmoid(a1)
+   a2 = np.dot(z1, W2) + b2
+   z2 = sigmoid(a2)
+   a3 = np.dot(x2, W3) + b3
+   y = softmax(a3)
+   
+   return y
+   
+# init_network()에서는 pickle 파일인 sample_weight.pkl에 저장된 '학습된 가중치 매개변수'를 읽습니다.
+
+- 이제 이 함수를 사용해 신경망에 의한 추론을 수행해보고, [정확도] (분류가 얼마나 올바른가?)도 평가해봅시다.
+
+x, t = get_data()
+network = init_network()
+
+accuracy_cnt = 0
+for i in range(len(x)):
+   y = predict(network, x[i])
+   p = np.argmax(y) # 확률이 가장 높은 원소의 인덱스를 얻는다.
+   if p == t[i]:
+      accuracy_cnt += 1
+      
+print('Accuracy:' + str(float(accuracy_cnt) / len(x)))
+
+* 데이터를 특정 범위로 변환하는 처리를 [정규화]라고 하고, 신경망의 입력 데이터에 특정 변환을 가하는 것을 [전처리]라고 합니다.
+
+-
+
+3.6.3 배치 처리
+* [배치] : 하나로 묶은 입력 데이터를 배치라고 합니다.
+
+x, t = get_data()
+network = init_network()
+
+batch_size = 100
+accuracy_cnt = 0
+
+for i in range(0, len(x), batch_size):
+   x_batch = x[i, i + batch_size]
+   y_batch = predict(network, x_batch)
+   p = np.argmax(y_batch, axis = 1)
+   accuracy_cnt += np.sum(p == t[i : i+batch_size])
+   
+   
